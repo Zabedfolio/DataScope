@@ -3,3 +3,4 @@ export * from "./CenteredHeroHeader";
 export * from "./IsometricDataStage";
 export * from "./IsometricDataEngine";
 export * from "./MetricsStrip";
+export * from "./InteractiveExplorerDemo";
