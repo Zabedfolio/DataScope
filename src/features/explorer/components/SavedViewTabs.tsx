@@ -11,6 +11,7 @@ export interface SavedView {
 interface SavedViewTabsProps {
   activeViewId: string;
   onSelectView: (viewId: string) => void;
+  userRole?: string;
 }
 
 export const SAVED_VIEWS: SavedView[] = [
@@ -20,7 +21,7 @@ export const SAVED_VIEWS: SavedView[] = [
   { id: "security", name: "Security Handshakes & mTLS" },
 ];
 
-export function SavedViewTabs({ activeViewId, onSelectView }: SavedViewTabsProps) {
+export function SavedViewTabs({ activeViewId, onSelectView, userRole }: SavedViewTabsProps) {
   return (
     <div className="w-full border-b border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01] px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-x-auto scrollbar-none py-1">
@@ -44,17 +45,29 @@ export function SavedViewTabs({ activeViewId, onSelectView }: SavedViewTabsProps
           })}
         </div>
 
-        {/* Create Saved View Action */}
-        <button
-          type="button"
-          onClick={() => alert("Save current query view to your enterprise workspace")}
-          className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors"
-        >
-          <svg className="w-3.5 h-3.5 text-[#00D69A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span className="hidden sm:inline">Save View</span>
-        </button>
+        {/* Create Saved View Action (§2, §13) */}
+        {userRole === "Viewer" ? (
+          <div
+            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono text-slate-400 select-none opacity-60 cursor-not-allowed"
+            title="Viewers can only access shared views. Data Analyst role required to save presets."
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="hidden sm:inline">Shared Presets (Viewer)</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => alert("Save current query view to your enterprise workspace")}
+            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5 text-[#00D69A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Save View</span>
+          </button>
+        )}
       </div>
     </div>
   );

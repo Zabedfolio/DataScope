@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { UserProfile } from "@/features/auth/context/AuthContext";
+import { UserProfile, useAuth } from "@/features/auth/context/AuthContext";
+import { useAppDispatch } from "@/store/hooks";
+import { setRole, UserRole } from "@/store/slices/authSlice";
 
 interface UserMenuProps {
   user: UserProfile;
@@ -13,6 +15,13 @@ interface UserMenuProps {
 export function UserMenu({ user, onLogout, className = "" }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { switchRole } = useAuth();
+  const dispatch = useAppDispatch();
+
+  const handleRoleChange = (role: UserRole) => {
+    switchRole(role);
+    dispatch(setRole(role));
+  };
 
   // Close when clicking outside
   useEffect(() => {
@@ -100,6 +109,33 @@ export function UserMenu({ user, onLogout, className = "" }: UserMenuProps) {
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
               {user.email}
+            </div>
+          </div>
+
+          {/* Instant RBAC Role Switcher (§2, §13) */}
+          <div className="px-2.5 py-2 border-b border-slate-100 dark:border-white/5 mb-1 bg-slate-50/50 dark:bg-white/[0.02] rounded-xl">
+            <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-400 mb-1.5 px-0.5">
+              <span>Active RBAC Role</span>
+              <span className="text-[#008A64] dark:text-[#00D69A]">Demo Selector</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {(["Administrator", "Data Analyst", "Viewer"] as const).map((r) => {
+                const isSelected = user.role === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => handleRoleChange(r)}
+                    className={`py-1 px-1 rounded-lg text-[10px] font-mono transition-all text-center truncate ${
+                      isSelected
+                        ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
+                        : "bg-slate-200/60 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {r === "Administrator" ? "Admin" : r === "Data Analyst" ? "Analyst" : "Viewer"}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

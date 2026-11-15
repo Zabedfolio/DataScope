@@ -91,3 +91,4 @@ describe("searchSlice reducer", () => {
     expect(state.sortDirection).toBe("desc");
   });
 });
+

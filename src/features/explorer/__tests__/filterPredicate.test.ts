@@ -48,3 +48,4 @@ describe("Filter Predicate Evaluation Engine", () => {
     expect(Math.ceil(SAMPLE_RECORDS.length / pageSize)).toBe(3);
   });
 });
+

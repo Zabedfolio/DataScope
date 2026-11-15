@@ -18,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (userData: UserProfile) => void;
   logout: () => Promise<void>;
+  switchRole: (role: "Administrator" | "Data Analyst" | "Viewer") => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: () => {},
   logout: async () => {},
+  switchRole: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -86,6 +88,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/");
   }, [router]);
 
+  const switchRole = useCallback((newRole: "Administrator" | "Data Analyst" | "Viewer") => {
+    setUser((prev) => {
+      const updated: UserProfile = prev
+        ? { ...prev, role: newRole }
+        : {
+            id: "usr_alex_mercer",
+            name: "Alex Mercer",
+            email: "alex.mercer@enterprise.io",
+            role: newRole,
+          };
+      try {
+        localStorage.setItem("datascope_user", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -94,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: isPending || isLoading,
         login,
         logout,
+        switchRole,
       }}
     >
       {children}

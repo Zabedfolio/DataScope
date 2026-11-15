@@ -15,6 +15,7 @@ interface TableCommandBarProps {
   streamRate?: 1 | 3 | 5 | 10;
   onChangeStreamRate?: (rate: 1 | 3 | 5 | 10) => void;
   ingestedCount?: number;
+  userRole?: string;
 }
 
 export function TableCommandBar({
@@ -29,6 +30,7 @@ export function TableCommandBar({
   streamRate = 1,
   onChangeStreamRate,
   ingestedCount = 0,
+  userRole,
 }: TableCommandBarProps) {
   const [showColumnMenu, setShowColumnMenu] = useState(false);
 
@@ -179,23 +181,35 @@ export function TableCommandBar({
             )}
           </div>
 
-          {/* Export Actions */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onExport("csv")}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#051013] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
+          {/* Export Actions (§2, §13) */}
+          {userRole === "Viewer" ? (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs font-mono select-none"
+              title="Exporting data requires Data Analyst or Administrator role clearance"
             >
-              Export CSV
-            </button>
-            <button
-              type="button"
-              onClick={() => onExport("json")}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#051013] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
-            >
-              JSON
-            </button>
-          </div>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Export Restricted (Viewer)</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => onExport("csv")}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#051013] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
+              >
+                Export CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => onExport("json")}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#051013] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs transition-colors"
+              >
+                JSON
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

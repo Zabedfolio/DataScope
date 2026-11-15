@@ -9,6 +9,7 @@ export interface DatasetMetadata {
   throughputRate: string;
   syncFrequency: string;
   tags: string[];
+  accessLevel?: "Public" | "Enterprise" | "Restricted";
 }
 
 export interface StreamRecord {

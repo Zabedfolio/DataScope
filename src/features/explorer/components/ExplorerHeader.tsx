@@ -76,8 +76,19 @@ export function ExplorerHeader({ currentDataset, onSelectDataset }: ExplorerHead
                         }`}
                       >
                         <div>
-                          <div className="text-xs font-bold font-sans">{ds.name}</div>
-                          <div className="text-[10px] text-slate-500 line-clamp-1">{ds.description}</div>
+                          <div className="text-xs font-bold font-sans flex items-center gap-1.5">
+                            <span>{ds.name}</span>
+                            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                              ds.accessLevel === "Restricted"
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                : ds.accessLevel === "Enterprise"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            }`}>
+                              {ds.accessLevel || "Public"}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{ds.description}</div>
                         </div>
                         <div className="text-right shrink-0">
                           <span className="text-[10px] font-mono text-[#009E73] dark:text-[#00D69A]">

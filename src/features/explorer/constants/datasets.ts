@@ -12,6 +12,7 @@ export const AVAILABLE_DATASETS: DatasetMetadata[] = [
     throughputRate: "2.48 Gbps",
     syncFrequency: "Real-time (0.2s)",
     tags: ["Streaming", "gRPC", "Protobuf", "Mesh"],
+    accessLevel: "Public",
   },
   {
     id: "ds_fin_orderbook",
@@ -24,6 +25,7 @@ export const AVAILABLE_DATASETS: DatasetMetadata[] = [
     throughputRate: "4.12 Gbps",
     syncFrequency: "Sub-millisecond",
     tags: ["Financial", "Cap'n Proto", "Low-Latency"],
+    accessLevel: "Enterprise",
   },
   {
     id: "ds_payment_ledger",
@@ -36,6 +38,7 @@ export const AVAILABLE_DATASETS: DatasetMetadata[] = [
     throughputRate: "1.84 Gbps",
     syncFrequency: "Quorum ACK (1.0s)",
     tags: ["Ledger", "PCI-DSS", "Blake3", "Audit"],
+    accessLevel: "Restricted",
   },
   {
     id: "ds_iot_sensor_mesh",
@@ -48,6 +51,7 @@ export const AVAILABLE_DATASETS: DatasetMetadata[] = [
     throughputRate: "890 Mbps",
     syncFrequency: "1.5s Adaptive",
     tags: ["Sensors", "MQTT", "Zero-Copy"],
+    accessLevel: "Public",
   },
 ];
 
