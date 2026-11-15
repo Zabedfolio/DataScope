@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { SearchHistoryDropdown } from "@/features/search/components";
+import { SearchHistoryDropdown } from "@/features/search/components/SearchHistoryDropdown";
 
 interface ExplorerFilterBarProps {
   searchQuery: string;

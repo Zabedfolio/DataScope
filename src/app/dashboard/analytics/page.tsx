@@ -1,23 +1,23 @@
 "use client";
 
 import React, { useMemo } from "react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { useGetAnalyticsQuery } from "@/services/datasetsApi";
 
-// Fallback data for offline state
+const AnalyticsCharts = dynamic(
+  () => import("@/features/analytics/components/AnalyticsCharts"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#07171C]/90 p-8 flex flex-col items-center justify-center gap-3 text-slate-400 font-mono text-xs">
+        <span className="w-6 h-6 border-2 border-[#00D69A] border-t-transparent rounded-full animate-spin" />
+        <span>Initializing telemetry visualization canvas...</span>
+      </div>
+    ),
+  }
+);
+
+// Fallback data for initial rendering
 const FALLBACK_ANALYTICS = {
   totalRecords: 100004,
   statusBreakdown: [
@@ -69,15 +69,6 @@ const FALLBACK_ANALYTICS = {
   ],
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  "HTTP 200 OK": "#00D69A",
-  "HTTP 400 Bad Request": "#FBBF24",
-  "HTTP 401 Unauthorized": "#F59E0B",
-  "HTTP 429 Rate Limit": "#FB923C",
-  "HTTP 500 Internal Error": "#EF4444",
-  "HTTP 503 Unavailable": "#DC2626",
-};
-
 export default function DashboardAnalyticsPage() {
   const { data: apiData } = useGetAnalyticsQuery();
 
@@ -96,7 +87,7 @@ export default function DashboardAnalyticsPage() {
               <span>PostgreSQL In-Engine Aggregation</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight font-sans">
-              Cluster Analytics & Ingest Metrics
+              Cluster Analytics &amp; Ingest Metrics
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl font-sans">
               Real-time statistical summaries computed on Supabase PostgreSQL without loading raw records into the browser.
@@ -155,175 +146,8 @@ export default function DashboardAnalyticsPage() {
           </div>
         </div>
 
-        {/* 3. Charts Grid Row 1: Throughput Area Chart & HTTP Status Distribution Pie */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Throughput Velocity (2 Columns) */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#07171C]/90 p-5 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white font-sans">
-                  Data Growth & Ingestion Velocity
-                </h2>
-                <p className="text-xs text-slate-500 font-mono">
-                  14-day record volume time-bucketed aggregation
-                </p>
-              </div>
-              <span className="text-xs font-mono text-[#008A64] dark:text-[#00D69A] font-bold">
-                Daily Buckets
-              </span>
-            </div>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={analytics.throughputTrend}>
-                  <defs>
-                    <linearGradient id="ingestGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00D69A" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#00D69A" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="day" stroke="#64748B" fontSize={11} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={11} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#07171C",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "0.75rem",
-                      fontSize: "12px",
-                      fontFamily: "monospace",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    stroke="#00D69A"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#ingestGradient)"
-                    name="Ingested Records"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Status Breakdown (1 Column) */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#07171C]/90 p-5 shadow-sm flex flex-col justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white font-sans">
-                HTTP Status Distribution
-              </h2>
-              <p className="text-xs text-slate-500 font-mono">
-                Aggregated HTTP status code proportions
-              </p>
-            </div>
-
-            <div className="h-64 w-full relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={analytics.statusBreakdown}
-                    dataKey="count"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={3}
-                  >
-                    {analytics.statusBreakdown.map((entry) => (
-                      <Cell
-                        key={`cell-${entry.status}`}
-                        fill={STATUS_COLORS[entry.name] || "#64748B"}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#07171C",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "0.75rem",
-                      fontSize: "12px",
-                      fontFamily: "monospace",
-                    }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: "11px", fontFamily: "monospace" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* 4. Charts Grid Row 2: Microservice Volumes Bar Chart & Top Filter Rules */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Microservices (2 Columns) */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#07171C]/90 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white font-sans">
-                  Record Distribution by Microservice
-                </h2>
-                <p className="text-xs text-slate-500 font-mono">
-                  Top 8 services ranked by ingested volume and average latency
-                </p>
-              </div>
-            </div>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.serviceBreakdown}>
-                  <XAxis dataKey="service" stroke="#64748B" fontSize={10} tickLine={false} />
-                  <YAxis stroke="#64748B" fontSize={11} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#07171C",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "0.75rem",
-                      fontSize: "12px",
-                      fontFamily: "monospace",
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#00D69A" radius={[6, 6, 0, 0]} name="Record Count" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Top Filter Rules (1 Column) */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#07171C]/90 p-5 shadow-sm flex flex-col justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white font-sans">
-                Most Frequently Used Filters
-              </h2>
-              <p className="text-xs text-slate-500 font-mono mb-4">
-                Top search query predicates executed by analysts
-              </p>
-
-              <div className="space-y-3 font-mono text-xs">
-                {analytics.frequentlyUsedFilters.map((f, i) => (
-                  <div
-                    key={i}
-                    className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        {f.rule}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        Category: {f.category}
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-[#00D69A]/15 text-[#008A64] dark:text-[#00D69A] font-bold text-[11px]">
-                      {f.count.toLocaleString()} queries
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* 3. Recharts Dynamic Visualizations */}
+        <AnalyticsCharts analytics={analytics} />
       </div>
     </div>
   );
