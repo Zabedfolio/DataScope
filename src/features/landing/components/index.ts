@@ -4,3 +4,6 @@ export * from "./IsometricDataStage";
 export * from "./IsometricDataEngine";
 export * from "./MetricsStrip";
 export * from "./InteractiveExplorerDemo";
+export * from "./BentoFeatures";
+export * from "./HowItWorks";
+export * from "./LandingCta";
