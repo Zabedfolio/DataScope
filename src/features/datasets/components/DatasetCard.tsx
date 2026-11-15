@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { CatalogDataset } from "../types";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 interface DatasetCardProps {
   dataset: CatalogDataset;
@@ -10,6 +11,12 @@ interface DatasetCardProps {
 }
 
 export function DatasetCard({ dataset, onInspectSchema }: DatasetCardProps) {
+  const { user } = useAuth();
+  const currentRole = user?.role || "Data Analyst";
+  const isViewer = currentRole.toLowerCase().includes("viewer");
+  const isRestrictedForViewer =
+    isViewer && (dataset.accessLevel === "Enterprise" || dataset.accessLevel === "Restricted");
+
   const getAccessBadge = (level: CatalogDataset["accessLevel"]) => {
     switch (level) {
       case "Public":
@@ -26,9 +33,20 @@ export function DatasetCard({ dataset, onInspectSchema }: DatasetCardProps) {
       <div>
         {/* Header: Access Badge & Category */}
         <div className="flex items-center justify-between gap-2 mb-3">
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${getAccessBadge(dataset.accessLevel)}`}>
-            {dataset.accessLevel}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${getAccessBadge(
+                dataset.accessLevel
+              )}`}
+            >
+              {dataset.accessLevel}
+            </span>
+            {isRestrictedForViewer && (
+              <span className="text-[10px] font-mono text-amber-500 font-bold">
+                🔒 Locked for Viewer
+              </span>
+            )}
+          </div>
           <span className="text-[10px] font-mono uppercase text-slate-400">
             {dataset.category}
           </span>
@@ -100,9 +118,13 @@ export function DatasetCard({ dataset, onInspectSchema }: DatasetCardProps) {
 
         <Link
           href={`/dashboard/explorer?dataset=${dataset.slug}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold transition-all hover:scale-[1.02]"
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+            isRestrictedForViewer
+              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25"
+              : "bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 hover:scale-[1.02]"
+          }`}
         >
-          <span>Open Explorer</span>
+          <span>{isRestrictedForViewer ? "🔒 Clearance Required" : "Open Explorer"}</span>
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
@@ -111,4 +133,3 @@ export function DatasetCard({ dataset, onInspectSchema }: DatasetCardProps) {
     </div>
   );
 }
-

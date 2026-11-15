@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { ViewHeader, ViewCard } from "@/features/views/components";
 import { INITIAL_SAVED_VIEWS } from "@/features/views/constants/saved-views";
 import { SavedViewEntity } from "@/features/views/types";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import {
   useGetSavedViewsQuery,
   useCreateSavedViewMutation,
@@ -12,6 +13,10 @@ import {
 } from "@/services/viewsApi";
 
 export default function DashboardSavedViewsPage() {
+  const { user } = useAuth();
+  const currentRole = user?.role || "Data Analyst";
+  const isViewer = currentRole.toLowerCase().includes("viewer");
+
   const { data: apiViews } = useGetSavedViewsQuery();
   const [createViewMutation] = useCreateSavedViewMutation();
   const [toggleShareMutation] = useToggleShareSavedViewMutation();
@@ -28,11 +33,21 @@ export default function DashboardSavedViewsPage() {
     }
   }, [apiViews]);
 
+  // RBAC Gating (§2.C): Viewers can ONLY access shared views, never private views of analysts
+  const authorizedViews = useMemo(() => {
+    if (isViewer) {
+      return views.filter((v) => v.sharedWithTeam);
+    }
+    return views;
+  }, [views, isViewer]);
+
   // Filter logic
   const filteredViews = useMemo(() => {
-    return views.filter((v) => {
-      if (filterTab === "shared" && !v.sharedWithTeam) return false;
-      if (filterTab === "private" && v.sharedWithTeam) return false;
+    return authorizedViews.filter((v) => {
+      if (!isViewer) {
+        if (filterTab === "shared" && !v.sharedWithTeam) return false;
+        if (filterTab === "private" && v.sharedWithTeam) return false;
+      }
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
@@ -43,10 +58,11 @@ export default function DashboardSavedViewsPage() {
         v.filterRules.some((r) => r.toLowerCase().includes(q))
       );
     });
-  }, [views, filterTab, searchQuery]);
+  }, [authorizedViews, isViewer, filterTab, searchQuery]);
 
   // Actions
   const handleDelete = async (id: string) => {
+    if (isViewer) return; // Blocked for Viewer
     setViews((prev) => prev.filter((v) => v.id !== id));
     try {
       await deleteViewMutation(id).unwrap();
@@ -56,6 +72,7 @@ export default function DashboardSavedViewsPage() {
   };
 
   const handleToggleShare = async (id: string) => {
+    if (isViewer) return; // Blocked for Viewer
     setViews((prev) =>
       prev.map((v) => (v.id === id ? { ...v, sharedWithTeam: !v.sharedWithTeam } : v))
     );
@@ -67,6 +84,7 @@ export default function DashboardSavedViewsPage() {
   };
 
   const handleCreateNew = async () => {
+    if (isViewer) return; // Blocked for Viewer
     const newView: SavedViewEntity = {
       id: `view_${Date.now()}`,
       title: "New Custom Ingest Filter",
@@ -92,13 +110,37 @@ export default function DashboardSavedViewsPage() {
 
   const sharedCount = useMemo(() => views.filter((v) => v.sharedWithTeam).length, [views]);
 
+  // Dataset clearance check for Viewer
+  const isDatasetUnauthorized = (datasetId: string) => {
+    if (!isViewer) return false;
+    return datasetId === "ds_fin_orderbook" || datasetId === "ds_payment_ledger";
+  };
+
   return (
     <div className="flex-1 flex flex-col pb-16 transition-colors">
+      {/* Viewer Role Notice Banner (§2.C, §13) */}
+      {isViewer && (
+        <div className="w-full bg-emerald-500/10 border-b border-emerald-500/20 px-4 sm:px-6 lg:px-8 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono text-emerald-800 dark:text-emerald-300">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00D69A] animate-pulse" />
+              <span>
+                <strong>Viewer Mode Active:</strong> You have read-only access to team-shared query bookmarks. Private presets, creation, and deletions are restricted to Data Analysts.
+              </span>
+            </div>
+            <span className="hidden md:inline px-2 py-0.5 rounded bg-emerald-500/20 text-[10px] uppercase font-bold tracking-wider">
+              Shared Only
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header Banner */}
       <ViewHeader
-        totalViews={views.length}
+        totalViews={authorizedViews.length}
         sharedCount={sharedCount}
         onCreateNew={handleCreateNew}
+        isViewer={isViewer}
       />
 
       {/* 2. Filter & Search Controls */}
@@ -131,39 +173,58 @@ export default function DashboardSavedViewsPage() {
 
           {/* Tab Filter */}
           <div className="flex items-center gap-1 text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => setFilterTab("all")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                filterTab === "all"
-                  ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
-              }`}
-            >
-              All Views ({views.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterTab("shared")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                filterTab === "shared"
-                  ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
-              }`}
-            >
-              Shared ({sharedCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterTab("private")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                filterTab === "private"
-                  ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                  : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
-              }`}
-            >
-              Private ({views.length - sharedCount})
-            </button>
+            {isViewer ? (
+              <>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-lg bg-[#00D69A] text-slate-950 font-bold shadow-sm"
+                >
+                  Authorized Shared Views ({sharedCount})
+                </button>
+                <span
+                  className="px-3 py-1.5 rounded-lg text-slate-400 bg-slate-100 dark:bg-white/5 cursor-not-allowed opacity-60 text-xs"
+                  title="Private query views belong to individual analysts and require Data Analyst role."
+                >
+                  🔒 Private Views (Analyst Only)
+                </span>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setFilterTab("all")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    filterTab === "all"
+                      ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
+                      : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
+                  }`}
+                >
+                  All Views ({views.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterTab("shared")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    filterTab === "shared"
+                      ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
+                      : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
+                  }`}
+                >
+                  Shared ({sharedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterTab("private")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    filterTab === "private"
+                      ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
+                      : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
+                  }`}
+                >
+                  Private ({views.length - sharedCount})
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -192,6 +253,8 @@ export default function DashboardSavedViewsPage() {
                 view={v}
                 onDelete={handleDelete}
                 onToggleShare={handleToggleShare}
+                isViewer={isViewer}
+                isDatasetUnauthorized={isDatasetUnauthorized(v.datasetId)}
               />
             ))}
           </div>
@@ -200,4 +263,3 @@ export default function DashboardSavedViewsPage() {
     </div>
   );
 }
-
