@@ -20,8 +20,27 @@ export function NavActions({ className = "", onItemClick }: NavActionsProps) {
       <ThemeToggle />
 
       {isAuthenticated && user ? (
-        /* Authenticated User Menu */
-        <UserMenu user={user} onLogout={logout} />
+        /* Authenticated Actions: Go to Dashboard CTA + User Profile Menu */
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <Link
+            href="/dashboard"
+            onClick={onItemClick}
+            className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-950 rounded-xl bg-gradient-to-r from-[#00F5A0] via-[#00D69A] to-[#00B884] hover:from-[#1AFFB0] hover:to-[#00C990] shadow-[0_2px_12px_rgba(0,214,154,0.35)] hover:shadow-[0_4px_18px_rgba(0,214,154,0.5)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <span>Dashboard</span>
+            <svg
+              className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
+
+          <UserMenu user={user} onLogout={logout} />
+        </div>
       ) : (
         /* Guest Actions */
         <>

@@ -72,7 +72,7 @@ export function DatasetTable({ datasets, onInspectSchema }: DatasetTableProps) {
                     Schema
                   </button>
                   <Link
-                    href="/explorer"
+                    href={`/dashboard/explorer?dataset=${ds.slug}`}
                     className="px-2.5 py-1 rounded text-xs bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold transition-all"
                   >
                     Open &rarr;

@@ -4,6 +4,7 @@ import { PLATFORM_METRICS } from "../constants/metrics";
 export function MetricsStrip() {
   return (
     <section
+      id="metrics"
       aria-label="Platform Telemetry & Performance Metrics"
       className="relative w-full border-y border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#071317]/80 backdrop-blur-md transition-colors duration-300"
     >

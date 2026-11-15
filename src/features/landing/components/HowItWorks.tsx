@@ -4,6 +4,7 @@ import { PIPELINE_STEPS } from "../constants/how-it-works";
 export function HowItWorks() {
   return (
     <section
+      id="how-it-works"
       aria-label="Pipeline Architecture & How It Works"
       className="relative w-full py-12 sm:py-20 lg:py-24 overflow-hidden bg-gradient-to-b from-[#FAFDFB] via-white to-[#F4F9F7] dark:from-[#040C0E] dark:via-[#071317] dark:to-[#040C0E] transition-colors duration-300"
     >

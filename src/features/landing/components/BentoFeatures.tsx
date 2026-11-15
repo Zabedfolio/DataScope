@@ -4,6 +4,7 @@ import { PLATFORM_FEATURES } from "../constants/features";
 export function BentoFeatures() {
   return (
     <section
+      id="features"
       aria-label="Core Platform Capabilities"
       className="relative w-full py-12 sm:py-20 lg:py-24 overflow-hidden bg-gradient-to-b from-[#F4F9F7] via-white to-[#FAFDFB] dark:from-[#040C0E] dark:via-[#061418] dark:to-[#040C0E] transition-colors duration-300"
     >

@@ -119,7 +119,7 @@ export function DatasetSchemaModal({ dataset, onClose }: DatasetSchemaModalProps
               Close
             </button>
             <Link
-              href="/explorer"
+              href={`/dashboard/explorer?dataset=${dataset.slug}`}
               className="px-4 py-1.5 rounded-lg bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold transition-all"
             >
               Open in Explorer &rarr;

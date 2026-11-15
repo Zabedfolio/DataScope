@@ -198,6 +198,14 @@ export function MobileMenu() {
                     </span>
                   </div>
 
+                  <Link
+                    href="/dashboard"
+                    onClick={handleClose}
+                    className="w-full py-2.5 text-center text-xs font-bold rounded-xl text-slate-950 bg-gradient-to-r from-[#00F5A0] via-[#00D69A] to-[#00B884] shadow-sm transition-all"
+                  >
+                    Open Workstation Dashboard &rarr;
+                  </Link>
+
                   <button
                     type="button"
                     onClick={() => {

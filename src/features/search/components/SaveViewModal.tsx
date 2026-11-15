@@ -99,7 +99,7 @@ export function SaveViewModal({
                 Close
               </button>
               <Link
-                href="/views"
+                href="/dashboard/views"
                 className="px-4 py-2 text-xs font-bold rounded-xl bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 transition-all"
               >
                 Go to Saved Views Catalog &rarr;

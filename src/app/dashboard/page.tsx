@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const displayRole = user?.role || "Enterprise Analyst";
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen pt-20 sm:pt-24 pb-16 bg-slate-50/50 dark:bg-[#040C0E] transition-colors">
+    <div className="flex-1 flex flex-col pb-16 transition-colors">
       
       {/* 1. Header Overview Banner */}
       <div className="w-full border-b border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#07171C]/90 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 backdrop-blur-xl">
@@ -40,7 +40,7 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
-              href="/explorer"
+              href="/dashboard/explorer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 shadow-md shadow-[#00D69A]/20 transition-all hover:-translate-y-0.5"
             >
               <span>Launch Explorer</span>
@@ -50,7 +50,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link
-              href="/search"
+              href="/dashboard/search"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/10 bg-white dark:bg-[#051013] hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all"
             >
               <svg className="w-3.5 h-3.5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -250,7 +250,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link
-              href="/datasets"
+              href="/dashboard/datasets"
               className="text-xs font-mono text-[#008A64] dark:text-[#00D69A] hover:underline"
             >
               View Full Catalog &rarr;
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                   </div>
 
                   <Link
-                    href={`/explorer?dataset=${ds.slug}`}
+                    href={`/dashboard/explorer?dataset=${ds.slug}`}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-[#00D69A] text-slate-700 dark:text-slate-300 hover:text-slate-950 font-bold text-xs transition-all"
                   >
                     <span>Open Workstation &rarr;</span>

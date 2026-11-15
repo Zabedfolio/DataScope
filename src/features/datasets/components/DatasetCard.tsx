@@ -99,7 +99,7 @@ export function DatasetCard({ dataset, onInspectSchema }: DatasetCardProps) {
         </button>
 
         <Link
-          href="/explorer"
+          href={`/dashboard/explorer?dataset=${dataset.slug}`}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold transition-all hover:scale-[1.02]"
         >
           <span>Open Explorer</span>

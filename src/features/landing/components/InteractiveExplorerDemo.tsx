@@ -99,6 +99,7 @@ export function InteractiveExplorerDemo() {
 
   return (
     <section
+      id="demo"
       aria-label="Interactive Data Explorer Preview"
       className="relative w-full py-12 sm:py-20 lg:py-24 overflow-hidden bg-gradient-to-b from-[#FAFDFB] via-white to-[#F4F9F7] dark:from-[#040C0E] dark:via-[#071317] dark:to-[#040C0E] transition-colors duration-300"
     >

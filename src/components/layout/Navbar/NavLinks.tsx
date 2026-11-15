@@ -9,13 +9,14 @@ export interface NavItem {
   href: string;
 }
 
-export const NAV_ITEMS: NavItem[] = [
-  { label: "Overview", href: "/dashboard" },
-  { label: "Datasets", href: "/datasets" },
-  { label: "Data Explorer", href: "/explorer" },
-  { label: "Advanced Search", href: "/search" },
-  { label: "Saved Views", href: "/views" },
+export const MARKETING_NAV_ITEMS: NavItem[] = [
+  { label: "Features", href: "/#features" },
+  { label: "Live Demo", href: "/#demo" },
+  { label: "Pipeline", href: "/#how-it-works" },
+  { label: "Telemetry", href: "/#metrics" },
 ];
+
+export const NAV_ITEMS: NavItem[] = MARKETING_NAV_ITEMS;
 
 interface NavLinksProps {
   className?: string;
@@ -27,7 +28,7 @@ export function NavLinks({ className = "", onItemClick }: NavLinksProps) {
 
   return (
     <ul className={`flex items-center gap-1 sm:gap-2 ${className}`}>
-      {NAV_ITEMS.map((item) => {
+      {MARKETING_NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href;
         return (
           <li key={item.href}>

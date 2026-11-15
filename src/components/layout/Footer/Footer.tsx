@@ -60,22 +60,22 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/datasets" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
+                <Link href="/dashboard/datasets" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
                   Dataset Library
                 </Link>
               </li>
               <li>
-                <Link href="/explorer" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
+                <Link href="/dashboard/explorer" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
                   Data Explorer
                 </Link>
               </li>
               <li>
-                <Link href="/search" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
+                <Link href="/dashboard/search" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
                   Advanced Search
                 </Link>
               </li>
               <li>
-                <Link href="/views" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
+                <Link href="/dashboard/views" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-[#00D69A] transition-colors">
                   Saved Views
                 </Link>
               </li>

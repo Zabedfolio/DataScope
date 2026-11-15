@@ -1,10 +1,20 @@
+"use client";
+
 import React from "react";
+import { usePathname } from "next/navigation";
 import { NavBrand } from "./NavBrand";
 import { NavLinks } from "./NavLinks";
 import { NavActions } from "./NavActions";
 import { MobileMenu } from "./MobileMenu";
 
 export function Navbar() {
+  const pathname = usePathname();
+
+  // Do not render the marketing floating navbar in the dedicated workstation dashboard
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <header
       role="banner"

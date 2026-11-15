@@ -109,7 +109,7 @@ export function ViewCard({ view, onDelete, onToggleShare }: ViewCardProps) {
           </div>
 
           <Link
-            href="/explorer"
+            href={`/dashboard/explorer?view=${view.id}`}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold transition-all whitespace-nowrap text-xs shrink-0"
           >
             <span>Open &rarr;</span>

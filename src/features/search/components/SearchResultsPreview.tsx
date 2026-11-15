@@ -81,7 +81,7 @@ export function SearchResultsPreview({
       <div className="px-5 py-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01] flex items-center justify-between text-xs font-mono">
         <span className="text-slate-500">Showing top results</span>
         <Link
-          href="/explorer"
+          href="/dashboard/explorer"
           className="text-[#008A64] dark:text-[#00D69A] hover:underline font-bold"
         >
           Open full results in Explorer &rarr;
