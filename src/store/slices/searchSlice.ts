@@ -1,5 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+export interface SortRule {
+  field: string;
+  direction: "asc" | "desc";
+}
+
 export interface SearchState {
   searchQuery: string;
   debouncedQuery: string;
@@ -12,6 +17,7 @@ export interface SearchState {
   pageSize: number;
   sortField: string;
   sortDirection: "asc" | "desc";
+  sortRules: SortRule[];
 }
 
 const initialState: SearchState = {
@@ -26,6 +32,7 @@ const initialState: SearchState = {
   pageSize: 25,
   sortField: "timestamp",
   sortDirection: "desc",
+  sortRules: [{ field: "timestamp", direction: "desc" }],
 };
 
 export const searchSlice = createSlice({
@@ -72,6 +79,49 @@ export const searchSlice = createSlice({
     ) => {
       state.sortField = action.payload.field;
       state.sortDirection = action.payload.direction;
+      state.sortRules = [{ field: action.payload.field, direction: action.payload.direction }];
+      state.page = 1;
+    },
+    toggleSortRule: (
+      state,
+      action: PayloadAction<{ field: string; isMulti?: boolean }>
+    ) => {
+      const { field, isMulti = false } = action.payload;
+      const existingIndex = state.sortRules.findIndex((r) => r.field === field);
+
+      if (!isMulti) {
+        // Single column toggle
+        if (existingIndex !== -1 && state.sortRules.length === 1) {
+          const nextDir = state.sortRules[0].direction === "desc" ? "asc" : "desc";
+          state.sortRules = [{ field, direction: nextDir }];
+          state.sortField = field;
+          state.sortDirection = nextDir;
+        } else {
+          state.sortRules = [{ field, direction: "desc" }];
+          state.sortField = field;
+          state.sortDirection = "desc";
+        }
+      } else {
+        // Multi-column toggle (Shift + click)
+        if (existingIndex !== -1) {
+          if (state.sortRules[existingIndex].direction === "desc") {
+            state.sortRules[existingIndex].direction = "asc";
+          } else {
+            // Remove if already asc and multiple exist
+            if (state.sortRules.length > 1) {
+              state.sortRules.splice(existingIndex, 1);
+            } else {
+              state.sortRules[0].direction = "desc";
+            }
+          }
+        } else {
+          state.sortRules.push({ field, direction: "desc" });
+        }
+        if (state.sortRules.length > 0) {
+          state.sortField = state.sortRules[0].field;
+          state.sortDirection = state.sortRules[0].direction;
+        }
+      }
       state.page = 1;
     },
     resetFilters: (state) => {
@@ -85,6 +135,7 @@ export const searchSlice = createSlice({
       state.page = 1;
       state.sortField = "timestamp";
       state.sortDirection = "desc";
+      state.sortRules = [{ field: "timestamp", direction: "desc" }];
     },
   },
 });
@@ -99,6 +150,7 @@ export const {
   setPage,
   setPageSize,
   setSort,
+  toggleSortRule,
   resetFilters,
 } = searchSlice.actions;
 

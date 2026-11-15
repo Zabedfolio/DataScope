@@ -28,6 +28,7 @@ import {
   setDebouncedQuery,
   setPageSize as setReduxPageSize,
   setSort as setReduxSort,
+  toggleSortRule,
 } from "@/store/slices/searchSlice";
 import {
   setDensity as setReduxDensity,
@@ -86,6 +87,13 @@ export default function DashboardExplorerPage() {
     return undefined;
   }, [activeChips]);
 
+  const sortRulesParam = useMemo(() => {
+    if (searchState.sortRules && searchState.sortRules.length > 0) {
+      return searchState.sortRules.map((r) => `${r.field}:${r.direction}`).join(",");
+    }
+    return undefined;
+  }, [searchState.sortRules]);
+
   // Live Server Query (Supabase / Fastify)
   const { data: serverData } = useGetRecordsQuery(
     {
@@ -96,8 +104,9 @@ export default function DashboardExplorerPage() {
       status: statusParam,
       service: serviceParam,
       minLatency: minLatencyParam,
-      sortField,
-      sortDirection,
+      sortField: searchState.sortField,
+      sortDirection: searchState.sortDirection,
+      sortRules: sortRulesParam,
     },
     {
       pollingInterval: 0, // On demand with pagination
@@ -167,13 +176,10 @@ export default function DashboardExplorerPage() {
     dispatch(toggleColumnVisibility(key));
   };
 
-  // Column Sort
-  const handleSort = (field: SortField) => {
-    const newDir = sortField === field && sortDirection === "desc" ? "asc" : "desc";
-    setSortField(field);
-    setSortDirection(newDir);
+  // Column Sort (Single & Multi-Column via Shift+Click)
+  const handleSort = (field: SortField, isMulti: boolean = false) => {
+    dispatch(toggleSortRule({ field, isMulti }));
     setPage(1);
-    dispatch(setReduxSort({ field, direction: newDir }));
   };
 
   // Density change
@@ -257,8 +263,9 @@ export default function DashboardExplorerPage() {
         records={displayRecords}
         density={density}
         columns={columns}
-        sortField={sortField}
-        sortDirection={sortDirection}
+        sortField={searchState.sortField as SortField}
+        sortDirection={searchState.sortDirection}
+        sortRules={searchState.sortRules}
         onSort={handleSort}
         selectedRecord={selectedRecord}
         onSelectRecord={setSelectedRecord}

@@ -9,7 +9,8 @@ interface DataGridProps {
   columns: ColumnConfig[];
   sortField: SortField;
   sortDirection: SortDirection;
-  onSort: (field: SortField) => void;
+  sortRules?: Array<{ field: string; direction: "asc" | "desc" }>;
+  onSort: (field: SortField, isMulti?: boolean) => void;
   selectedRecord: StreamRecord | null;
   onSelectRecord: (record: StreamRecord) => void;
   onResetFilters: () => void;
@@ -22,6 +23,7 @@ export function DataGrid({
   columns,
   sortField,
   sortDirection,
+  sortRules,
   onSort,
   selectedRecord,
   onSelectRecord,
@@ -29,6 +31,29 @@ export function DataGrid({
   newlyIngestedIds,
 }: DataGridProps) {
   const isColVisible = (key: ColumnConfig["key"]) => columns.find((c) => c.key === key)?.visible ?? true;
+
+  const getSortBadge = (field: SortField) => {
+    if (sortRules && sortRules.length > 0) {
+      const idx = sortRules.findIndex((r) => r.field === field);
+      if (idx !== -1) {
+        const rule = sortRules[idx];
+        return (
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#00D69A]/20 text-[#008A64] dark:text-[#00D69A] font-bold text-[10px]">
+            {sortRules.length > 1 && <span className="text-[9px] opacity-75">{idx + 1}</span>}
+            <span>{rule.direction === "asc" ? "↑" : "↓"}</span>
+          </span>
+        );
+      }
+    }
+    if (sortField === field) {
+      return (
+        <span className="text-[#008A64] dark:text-[#00D69A] font-bold">
+          {sortDirection === "asc" ? "↑" : "↓"}
+        </span>
+      );
+    }
+    return null;
+  };
 
   const getStatusColor = (status: number) => {
     if (status >= 200 && status < 300) return "bg-[#00D69A]/15 text-[#009E73] dark:text-[#00D69A] border-[#00D69A]/30";
@@ -62,10 +87,12 @@ export function DataGrid({
               <th scope="col" className="py-2.5 px-4">
                 <button
                   type="button"
-                  onClick={() => onSort("timestamp")}
+                  onClick={(e) => onSort("timestamp", e.shiftKey)}
+                  title="Click to sort, Shift + Click for multi-column sort"
                   className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                  Time {sortField === "timestamp" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <span>Time</span>
+                  {getSortBadge("timestamp")}
                 </button>
               </th>
             )}
@@ -74,10 +101,12 @@ export function DataGrid({
               <th scope="col" className="py-2.5 px-4 sticky left-0 z-10 bg-slate-50/95 dark:bg-[#07171C]/95">
                 <button
                   type="button"
-                  onClick={() => onSort("id")}
+                  onClick={(e) => onSort("id", e.shiftKey)}
+                  title="Click to sort, Shift + Click for multi-column sort"
                   className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                  Stream ID {sortField === "id" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <span>Stream ID</span>
+                  {getSortBadge("id")}
                 </button>
               </th>
             )}
@@ -86,10 +115,12 @@ export function DataGrid({
               <th scope="col" className="py-2.5 px-4">
                 <button
                   type="button"
-                  onClick={() => onSort("service")}
+                  onClick={(e) => onSort("service", e.shiftKey)}
+                  title="Click to sort, Shift + Click for multi-column sort"
                   className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                  Service / Method {sortField === "service" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <span>Service / Method</span>
+                  {getSortBadge("service")}
                 </button>
               </th>
             )}
@@ -98,10 +129,12 @@ export function DataGrid({
               <th scope="col" className="py-2.5 px-4">
                 <button
                   type="button"
-                  onClick={() => onSort("cluster")}
+                  onClick={(e) => onSort("cluster", e.shiftKey)}
+                  title="Click to sort, Shift + Click for multi-column sort"
                   className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                  Cluster {sortField === "cluster" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <span>Cluster</span>
+                  {getSortBadge("cluster")}
                 </button>
               </th>
             )}
@@ -112,10 +145,12 @@ export function DataGrid({
               <th scope="col" className="py-2.5 px-4 text-right">
                 <button
                   type="button"
-                  onClick={() => onSort("latency")}
+                  onClick={(e) => onSort("latency", e.shiftKey)}
+                  title="Click to sort, Shift + Click for multi-column sort"
                   className="inline-flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors ml-auto"
                 >
-                  Latency {sortField === "latency" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <span>Latency</span>
+                  {getSortBadge("latency")}
                 </button>
               </th>
             )}
@@ -124,10 +159,12 @@ export function DataGrid({
               <th scope="col" className="py-2.5 px-4 text-center">
                 <button
                   type="button"
-                  onClick={() => onSort("status")}
+                  onClick={(e) => onSort("status", e.shiftKey)}
+                  title="Click to sort, Shift + Click for multi-column sort"
                   className="inline-flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors mx-auto"
                 >
-                  Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                  <span>Status</span>
+                  {getSortBadge("status")}
                 </button>
               </th>
             )}

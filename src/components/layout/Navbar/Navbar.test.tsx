@@ -21,9 +21,10 @@ describe("Navbar Component", () => {
 
   it("renders primary navigation links", () => {
     render(<Navbar />);
-    expect(screen.getByText("Overview")).toBeInTheDocument();
-    expect(screen.getByText("Datasets")).toBeInTheDocument();
-    expect(screen.getByText("Data Explorer")).toBeInTheDocument();
+    expect(screen.getByText("Features")).toBeInTheDocument();
+    expect(screen.getByText("Live Demo")).toBeInTheDocument();
+    expect(screen.getByText("Pipeline")).toBeInTheDocument();
+    expect(screen.getByText("Telemetry")).toBeInTheDocument();
   });
 
   it("renders both Log In and primary Get Started gradient action buttons", () => {

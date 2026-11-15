@@ -30,6 +30,11 @@ export type ViewDensity = "compact" | "comfortable";
 export type SortField = "timestamp" | "id" | "service" | "cluster" | "latency" | "status";
 export type SortDirection = "asc" | "desc";
 
+export interface SortRule {
+  field: SortField;
+  direction: SortDirection;
+}
+
 export interface ColumnConfig {
   key: SortField;
   label: string;

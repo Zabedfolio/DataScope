@@ -40,6 +40,7 @@ export interface GetPaginatedRecordsParams {
   maxLatency?: number;
   sortField?: string;
   sortDirection?: "asc" | "desc";
+  sortRules?: string;
 }
 
 interface ApiResponse<T> {
@@ -77,6 +78,7 @@ export const datasetsApi = baseApi.injectEndpoints({
         if (params.maxLatency !== undefined && params.maxLatency !== null) queryParams.set("maxLatency", String(params.maxLatency));
         if (params.sortField) queryParams.set("sortField", params.sortField);
         if (params.sortDirection) queryParams.set("sortDirection", params.sortDirection);
+        if (params.sortRules) queryParams.set("sortRules", params.sortRules);
 
         return `/api/v1/records?${queryParams.toString()}`;
       },
