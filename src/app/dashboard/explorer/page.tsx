@@ -19,7 +19,6 @@ import {
   ViewDensity,
   ColumnConfig,
   SortField,
-  SortDirection,
 } from "@/features/explorer/types";
 import { useGetRecordsQuery } from "@/services/datasetsApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -28,7 +27,6 @@ import {
   setSearchQuery as setReduxSearch,
   setDebouncedQuery,
   setPageSize as setReduxPageSize,
-  setSort as setReduxSort,
   toggleSortRule,
 } from "@/store/slices/searchSlice";
 import {
@@ -59,8 +57,6 @@ export default function DashboardExplorerPage() {
   const [activeChips, setActiveChips] = useState<string[]>([]);
   const [density, setDensity] = useState<ViewDensity>(uiState.density);
   const [columns, setColumns] = useState<ColumnConfig[]>(INITIAL_COLUMNS);
-  const [sortField, setSortField] = useState<SortField>(searchState.sortField as SortField);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(searchState.sortDirection);
   const [selectedRecord, setSelectedRecord] = useState<StreamRecord | null>(null);
 
   // RBAC Dataset Clearance Enforcement (§2, §13)
