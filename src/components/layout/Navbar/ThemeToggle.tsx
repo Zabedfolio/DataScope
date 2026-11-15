@@ -31,7 +31,7 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
 
   if (!mounted) {
     return (
-      <div className={`w-9 h-9 rounded-xl border border-slate-700/60 bg-slate-800/40 ${className}`} />
+      <div className={`w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 ${className}`} />
     );
   }
 
@@ -41,7 +41,7 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
       onClick={toggleTheme}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
       title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-      className={`relative inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-700/60 hover:border-slate-500 bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D69A] ${className}`}
+      className={`relative inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-slate-100 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D69A] ${className}`}
     >
       {theme === "dark" ? (
         // Sun Icon (click to switch to light)

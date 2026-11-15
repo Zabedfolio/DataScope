@@ -4,10 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { AVAILABLE_DATASETS } from "@/features/explorer/constants/datasets";
+import { RealtimeThroughputChart, ClusterId } from "./components/RealtimeThroughputChart";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [activeClusterTab, setActiveClusterTab] = useState<"all" | "us-east" | "us-west" | "eu" | "global">("all");
+  const [activeClusterTab, setActiveClusterTab] = useState<ClusterId>("all");
 
   const displayName = user?.name || "Lead Analyst";
   const displayRole = user?.role || "Enterprise Analyst";
@@ -128,115 +129,10 @@ export default function DashboardPage() {
         </div>
 
         {/* 3. Ingestion Activity Waveform */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#07171C]/90 p-6 shadow-sm backdrop-blur-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white font-sans">
-                Real-Time Cluster Throughput Dynamics
-              </h2>
-              <p className="text-xs text-slate-500 font-mono mt-0.5">
-                Aggregate streaming packet velocity measured at 500ms sampling window
-              </p>
-            </div>
-
-            {/* Cluster Tabs */}
-            <div className="flex items-center gap-1 text-xs font-mono p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-              <button
-                type="button"
-                onClick={() => setActiveClusterTab("all")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  activeClusterTab === "all"
-                    ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                All (4)
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveClusterTab("us-east")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  activeClusterTab === "us-east"
-                    ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                US-East
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveClusterTab("us-west")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  activeClusterTab === "us-west"
-                    ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                US-West
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveClusterTab("eu")}
-                className={`px-2.5 py-1 rounded-lg transition-all ${
-                  activeClusterTab === "eu"
-                    ? "bg-[#00D69A] text-slate-950 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                EU-Vault
-              </button>
-            </div>
-          </div>
-
-          {/* SVG Waveform Graphic */}
-          <div className="relative w-full h-44 sm:h-56 bg-slate-900/60 rounded-xl border border-slate-800 p-4 overflow-hidden flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-              <span>Peak: 12.4 Gbps</span>
-              <span className="text-[#00D69A]">Current: 9.32 Gbps (Active)</span>
-            </div>
-
-            {/* Dynamic Waveform SVG */}
-            <svg
-              className="w-full h-28 sm:h-36 overflow-visible"
-              viewBox="0 0 1000 200"
-              preserveAspectRatio="none"
-              fill="none"
-            >
-              <defs>
-                <linearGradient id="waveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#00D69A" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#00D69A" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              {/* Area Under Wave */}
-              <path
-                d="M 0,160 Q 120,40 250,110 T 500,80 T 750,140 T 1000,60 L 1000,200 L 0,200 Z"
-                fill="url(#waveGradient)"
-              />
-
-              {/* Wave Line */}
-              <path
-                d="M 0,160 Q 120,40 250,110 T 500,80 T 750,140 T 1000,60"
-                stroke="#00D69A"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-
-              {/* Data Pin Indicator */}
-              <circle cx="750" cy="140" r="5" fill="#00D69A" className="animate-ping" />
-              <circle cx="750" cy="140" r="4" fill="#FFFFFF" stroke="#00D69A" strokeWidth="2" />
-            </svg>
-
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-800/80">
-              <span>-60 mins</span>
-              <span>-45 mins</span>
-              <span>-30 mins</span>
-              <span>-15 mins</span>
-              <span>Live Now</span>
-            </div>
-          </div>
-        </div>
+        <RealtimeThroughputChart
+          activeCluster={activeClusterTab}
+          onSelectCluster={setActiveClusterTab}
+        />
 
         {/* 4. Active Enterprise Streams Matrix */}
         <div>

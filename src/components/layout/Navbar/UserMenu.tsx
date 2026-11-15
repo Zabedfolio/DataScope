@@ -47,27 +47,27 @@ export function UserMenu({ user, onLogout, className = "" }: UserMenuProps) {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-700/60 hover:border-slate-500 bg-slate-800/60 hover:bg-slate-800 text-slate-200 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D69A]"
+        className="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-slate-100 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D69A]"
       >
         {/* Avatar with Online Dot */}
         <div className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-[#00D69A] to-[#0E7C86] text-slate-950 font-bold text-xs tracking-wider shadow-sm">
           {initials}
-          <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#00D69A] ring-2 ring-slate-900" />
+          <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#00D69A] ring-2 ring-white dark:ring-slate-900" />
         </div>
 
         {/* User Name & Role (Hidden on small mobile) */}
         <div className="hidden sm:flex flex-col text-left">
-          <span className="text-xs font-semibold text-white tracking-tight line-clamp-1 max-w-[120px]">
+          <span className="text-xs font-semibold text-slate-800 dark:text-white tracking-tight line-clamp-1 max-w-[120px]">
             {user.name}
           </span>
-          <span className="text-[10px] font-mono text-[#00D69A] leading-tight">
+          <span className="text-[10px] font-mono text-[#008A64] dark:text-[#00D69A] leading-tight">
             {user.role}
           </span>
         </div>
 
         {/* Dropdown Chevron */}
         <svg
-          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
