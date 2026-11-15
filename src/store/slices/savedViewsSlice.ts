@@ -35,3 +35,4 @@ export const { setActiveViewId, setFilterTab, setViewSearchQuery } =
   savedViewsSlice.actions;
 
 export default savedViewsSlice.reducer;
+

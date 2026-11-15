@@ -104,7 +104,7 @@ export function Sidebar({ className = "" }: { className?: string }) {
   return (
     <aside
       aria-label="Workstation Navigation Sidebar"
-      className={`hidden md:flex flex-col justify-between shrink-0 h-full transition-all duration-300 ease-in-out border-r border-slate-200/80 dark:border-white/10 bg-[#0B242C] dark:bg-[#06141A] text-slate-300 select-none z-30 py-4 ${
+      className={`hidden md:flex flex-col justify-between shrink-0 h-full overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out border-r border-slate-200/80 dark:border-white/10 bg-[#0B242C] dark:bg-[#06141A] text-slate-300 select-none z-30 py-4 ${
         isCollapsed ? "w-14" : "w-60"
       } ${className}`}
     >
