@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StoreProvider } from "@/store/StoreProvider";
+import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import "./globals.css";
 
@@ -22,16 +23,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/icon.png?v=datascope" type="image/png" />
         <link rel="icon" href="/favicon.ico?v=datascope" sizes="any" />
         <link rel="apple-touch-icon" href="/icon.png?v=datascope" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('datascope-theme');
+                  var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark');
+                  document.documentElement.setAttribute('data-theme', theme);
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground flex flex-col">
         <StoreProvider>
-          <Navbar />
-          <div className="flex-1 flex flex-col">{children}</div>
+          <AuthProvider>
+            <Navbar />
+            <div className="flex-1 flex flex-col">{children}</div>
+          </AuthProvider>
         </StoreProvider>
       </body>
     </html>

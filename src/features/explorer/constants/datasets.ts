@@ -1,0 +1,53 @@
+import { DatasetMetadata } from "../types";
+
+export const AVAILABLE_DATASETS: DatasetMetadata[] = [
+  {
+    id: "ds_k8s_telemetry",
+    name: "K8s Microservice Telemetry",
+    slug: "k8s-telemetry",
+    description: "Distributed trace spans, mesh egress logs, and service health metrics.",
+    recordCount: 14829000,
+    byteSizeFormatted: "48.2 GB",
+    cluster: "US-East-Primary (12 Shards)",
+    throughputRate: "2.48 Gbps",
+    syncFrequency: "Real-time (0.2s)",
+    tags: ["Streaming", "gRPC", "Protobuf", "Mesh"],
+  },
+  {
+    id: "ds_fin_orderbook",
+    name: "Financial L2 Order Book Ticks",
+    slug: "financial-l2",
+    description: "High-frequency limit order snapshots, market depth ticks, and trade execution events.",
+    recordCount: 92410000,
+    byteSizeFormatted: "184.6 GB",
+    cluster: "US-West-HFT (8 Shards)",
+    throughputRate: "4.12 Gbps",
+    syncFrequency: "Sub-millisecond",
+    tags: ["Financial", "Cap'n Proto", "Low-Latency"],
+  },
+  {
+    id: "ds_payment_ledger",
+    name: "Cross-Region Payment Ledger",
+    slug: "payment-ledger",
+    description: "Cryptographically verified financial settlement transactions and double-entry logs.",
+    recordCount: 6840000,
+    byteSizeFormatted: "14.8 GB",
+    cluster: "EU-Central-Vault (16 Shards)",
+    throughputRate: "1.84 Gbps",
+    syncFrequency: "Quorum ACK (1.0s)",
+    tags: ["Ledger", "PCI-DSS", "Blake3", "Audit"],
+  },
+  {
+    id: "ds_iot_sensor_mesh",
+    name: "IoT Edge Sensor Stream",
+    slug: "iot-sensors",
+    description: "Automotive telemetry, vibration sensors, and industrial thermocouple feeds.",
+    recordCount: 32150000,
+    byteSizeFormatted: "29.4 GB",
+    cluster: "Global-Mesh (24 Shards)",
+    throughputRate: "890 Mbps",
+    syncFrequency: "1.5s Adaptive",
+    tags: ["Sensors", "MQTT", "Zero-Copy"],
+  },
+];
+

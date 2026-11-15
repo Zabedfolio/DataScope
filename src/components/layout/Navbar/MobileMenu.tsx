@@ -6,8 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "./NavLinks";
+import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export function MobileMenu() {
+  const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
@@ -122,28 +125,31 @@ export function MobileMenu() {
                   </span>
                 </div>
 
-                <button
-                  ref={closeButtonRef}
-                  type="button"
-                  onClick={handleClose}
-                  aria-label="Close navigation menu"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D69A]"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
+                <div className="flex items-center gap-2">
+                  <ThemeToggle />
+                  <button
+                    ref={closeButtonRef}
+                    type="button"
+                    onClick={handleClose}
+                    aria-label="Close navigation menu"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00D69A]"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Navigation Links */}
@@ -180,20 +186,47 @@ export function MobileMenu() {
 
             {/* Footer Actions */}
             <div className="pt-6 border-t border-slate-800 flex flex-col gap-2.5">
-              <Link
-                href="/login"
-                onClick={handleClose}
-                className="w-full py-2.5 text-center text-sm font-semibold rounded-xl text-slate-200 bg-slate-800/80 hover:bg-slate-700/80 hover:text-white transition-all border border-slate-700/50"
-              >
-                Log In
-              </Link>
-              <Link
-                href="/register"
-                onClick={handleClose}
-                className="w-full py-2.5 text-center text-sm font-bold rounded-xl text-slate-950 bg-gradient-to-r from-[#00F5A0] via-[#00D69A] to-[#00B884] hover:from-[#1AFFB0] hover:to-[#00C990] shadow-[0_2px_14px_rgba(0,214,154,0.35)] transition-all"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-white">{user.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">{user.email}</div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#00D69A]/10 text-[#00D69A] border border-[#00D69A]/20">
+                      {user.role}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClose();
+                      logout();
+                    }}
+                    className="w-full py-2.5 text-center text-xs font-bold rounded-xl text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={handleClose}
+                    className="w-full py-2.5 text-center text-sm font-semibold rounded-xl text-slate-200 bg-slate-800/80 hover:bg-slate-700/80 hover:text-white transition-all border border-slate-700/50"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={handleClose}
+                    className="w-full py-2.5 text-center text-sm font-bold rounded-xl text-slate-950 bg-gradient-to-r from-[#00F5A0] via-[#00D69A] to-[#00B884] hover:from-[#1AFFB0] hover:to-[#00C990] shadow-[0_2px_14px_rgba(0,214,154,0.35)] transition-all"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
               <p className="text-[11px] text-center text-slate-400 font-medium mt-1">
                 Enterprise Data Discovery Platform
               </p>
