@@ -219,7 +219,7 @@ export default function DashboardExplorerPage() {
   // Export handlers
   const handleExport = (format: "csv" | "json") => {
     if (format === "csv") {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const params = new URLSearchParams({ datasetId: currentDataset.id });
       if (searchState.debouncedQuery) params.append("search", searchState.debouncedQuery);
       if (statusParam) params.append("status", statusParam);
