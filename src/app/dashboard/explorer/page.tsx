@@ -138,6 +138,20 @@ export default function DashboardExplorerPage() {
     ingestedCount,
   } = useStreamSimulator(currentDataset, MOCK_STREAM_RECORDS);
 
+  // Global Keyboard Shortcuts (§6): 'p' toggles stream pause/resume
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+      if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        toggleStreaming();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleStreaming]);
+
   // Choose server records if available; fallback to streamed mock
   const displayRecords = useMemo(() => {
     if (serverData && serverData.data && serverData.data.length > 0) {
@@ -339,6 +353,8 @@ export default function DashboardExplorerPage() {
             selectedRecord={selectedRecord}
             onSelectRecord={setSelectedRecord}
             newlyIngestedIds={newlyIngestedIds}
+            searchQuery={searchQuery}
+            userRole={currentRole}
             onResetFilters={() => {
               setSearchQuery("");
               setActiveChips([]);

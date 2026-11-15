@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { StreamRecord, ViewDensity, ColumnConfig, SortField, SortDirection } from "../types";
 
 interface DataGridProps {
@@ -15,6 +15,29 @@ interface DataGridProps {
   onSelectRecord: (record: StreamRecord) => void;
   onResetFilters: () => void;
   newlyIngestedIds?: Set<string>;
+  searchQuery?: string;
+  userRole?: string;
+}
+
+function highlightMatch(text: string, query?: string) {
+  if (!query || !query.trim()) return text;
+  const terms = query.trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return text;
+  const pattern = terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const regex = new RegExp(`(${pattern})`, "gi");
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark
+        key={i}
+        className="bg-[#00D69A]/30 text-emerald-950 dark:text-[#00D69A] font-semibold px-0.5 rounded"
+      >
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
 }
 
 export function DataGrid({
@@ -29,8 +52,67 @@ export function DataGrid({
   onSelectRecord,
   onResetFilters,
   newlyIngestedIds,
+  searchQuery = "",
+  userRole = "Data Analyst",
 }: DataGridProps) {
-  const isColVisible = (key: ColumnConfig["key"]) => columns.find((c) => c.key === key)?.visible ?? true;
+  const isViewer = userRole.toLowerCase().includes("viewer");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [copiedBatch, setCopiedBatch] = useState(false);
+
+  const isColVisible = (key: ColumnConfig["key"]) =>
+    columns.find((c) => c.key === key)?.visible ?? true;
+
+  // Batch selection handlers (§3.B, §7)
+  const isAllSelected = records.length > 0 && selectedIds.size === records.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < records.length;
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(records.map((r) => r.id)));
+    }
+  };
+
+  const handleToggleRow = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleCopySelectedIds = () => {
+    const text = Array.from(selectedIds).join("\n");
+    navigator.clipboard.writeText(text);
+    setCopiedBatch(true);
+    setTimeout(() => setCopiedBatch(false), 2000);
+  };
+
+  const handleExportSelected = () => {
+    if (isViewer) return;
+    const selectedRecords = records.filter((r) => selectedIds.has(r.id));
+    const header = "id,timestamp,service,method,cluster,status,latency,summary\n";
+    const rows = selectedRecords
+      .map(
+        (r) =>
+          `"${r.id}","${r.timestamp}","${r.service}","${r.method}","${r.cluster}",${r.status},${r.latency},"${r.summary.replace(/"/g, '""')}"`
+      )
+      .join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `datascope_selected_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getSortBadge = (field: SortField) => {
     if (sortRules && sortRules.length > 0) {
@@ -56,8 +138,10 @@ export function DataGrid({
   };
 
   const getStatusColor = (status: number) => {
-    if (status >= 200 && status < 300) return "bg-[#00D69A]/15 text-[#009E73] dark:text-[#00D69A] border-[#00D69A]/30";
-    if (status >= 400 && status < 500) return "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30";
+    if (status >= 200 && status < 300)
+      return "bg-[#00D69A]/15 text-[#009E73] dark:text-[#00D69A] border-[#00D69A]/30";
+    if (status >= 400 && status < 500)
+      return "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30";
     return "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30";
   };
 
@@ -79,10 +163,25 @@ export function DataGrid({
   return (
     <div className="relative w-full flex-1 overflow-x-auto bg-white dark:bg-[#061418]">
       {/* Desktop / Tablet Tabular Grid */}
-      <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[760px]">
+      <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[800px]">
         {/* Sticky Table Header */}
         <thead className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#07171C]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-white/10 text-slate-500 dark:text-slate-400 font-mono text-[11px] uppercase tracking-wider">
           <tr>
+            {/* Row Selection Checkbox Header (§7) */}
+            <th scope="col" className="py-2.5 px-3 w-10 text-center">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = isSomeSelected;
+                }}
+                onChange={handleToggleSelectAll}
+                className="w-4 h-4 rounded border-slate-300 dark:border-white/20 text-[#00D69A] focus:ring-[#00D69A] cursor-pointer"
+                title="Select all visible records"
+                aria-label="Select all visible records"
+              />
+            </th>
+
             {isColVisible("timestamp") && (
               <th scope="col" className="py-2.5 px-4">
                 <button
@@ -177,7 +276,7 @@ export function DataGrid({
         <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-mono">
           {records.length === 0 ? (
             <tr>
-              <td colSpan={8} className="py-16 text-center text-slate-500 dark:text-slate-400">
+              <td colSpan={9} className="py-16 text-center text-slate-500 dark:text-slate-400">
                 <p className="text-sm">No streaming packets match the active query filter.</p>
                 <button
                   type="button"
@@ -191,19 +290,33 @@ export function DataGrid({
           ) : (
             records.map((rec) => {
               const isSelected = selectedRecord?.id === rec.id;
+              const isChecked = selectedIds.has(rec.id);
               const isNew = newlyIngestedIds?.has(rec.id);
               return (
                 <tr
                   key={rec.id}
                   onClick={() => onSelectRecord(rec)}
                   className={`group cursor-pointer transition-colors ${
-                    isNew
+                    isChecked
+                      ? "bg-[#00D69A]/10 dark:bg-[#00D69A]/15"
+                      : isNew
                       ? "bg-[#00D69A]/30 dark:bg-[#00D69A]/35 transition-all duration-700 animate-in fade-in"
                       : isSelected
                       ? "bg-[#00D69A]/15 dark:bg-[#00D69A]/20"
                       : "hover:bg-[#00D69A]/[0.05] dark:hover:bg-[#00D69A]/[0.06]"
                   }`}
                 >
+                  {/* Row Checkbox (§7) */}
+                  <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => handleToggleRow(rec.id, e as unknown as React.MouseEvent)}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-white/20 text-[#00D69A] focus:ring-[#00D69A] cursor-pointer"
+                      aria-label={`Select record ${rec.id}`}
+                    />
+                  </td>
+
                   {isColVisible("timestamp") && (
                     <td className={`${rowPadding} text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs`}>
                       {rec.timestamp}
@@ -213,7 +326,7 @@ export function DataGrid({
                   {isColVisible("id") && (
                     <td className={`${rowPadding} font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-[#061418] group-hover:bg-[#f2faf7] dark:group-hover:bg-[#091e23]`}>
                       <span className="group-hover:text-[#00B884] dark:group-hover:text-[#00D69A] transition-colors">
-                        {rec.id}
+                        {highlightMatch(rec.id, searchQuery)}
                       </span>
                     </td>
                   )}
@@ -225,7 +338,7 @@ export function DataGrid({
                           {rec.method}
                         </span>
                         <span className="text-slate-700 dark:text-slate-300 text-xs">
-                          {rec.service}
+                          {highlightMatch(rec.service, searchQuery)}
                         </span>
                       </div>
                     </td>
@@ -233,12 +346,12 @@ export function DataGrid({
 
                   {isColVisible("cluster") && (
                     <td className={`${rowPadding} text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs`}>
-                      {rec.cluster}
+                      {highlightMatch(rec.cluster, searchQuery)}
                     </td>
                   )}
 
                   <td className={`${rowPadding} text-slate-600 dark:text-slate-300 font-sans text-xs max-w-sm truncate`}>
-                    {rec.summary}
+                    {highlightMatch(rec.summary, searchQuery)}
                   </td>
 
                   {isColVisible("latency") && (
@@ -282,7 +395,52 @@ export function DataGrid({
           )}
         </tbody>
       </table>
+
+      {/* Floating Batch Action Bar (§3.B, §7) */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/95 dark:bg-[#07171C]/95 text-white shadow-2xl border border-[#00D69A]/40 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-200 font-mono text-xs">
+          <div className="flex items-center gap-2 pr-2 border-r border-slate-700">
+            <span className="w-2 h-2 rounded-full bg-[#00D69A] animate-ping" />
+            <span className="font-bold text-white">
+              {selectedIds.size} {selectedIds.size === 1 ? "record" : "records"} selected
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopySelectedIds}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+          >
+            {copiedBatch ? "✓ Copied" : "Copy IDs"}
+          </button>
+
+          {isViewer ? (
+            <span
+              className="px-3 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 cursor-not-allowed text-[11px]"
+              title="Exporting records requires Data Analyst or Administrator role."
+            >
+              🔒 Export CSV (Viewer Locked)
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleExportSelected}
+              className="px-3 py-1.5 rounded-xl bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold transition-all shadow-md shadow-[#00D69A]/20"
+            >
+              Export Selected (CSV)
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-slate-400 hover:text-white px-2 py-1 transition-colors"
+            title="Deselect all rows"
+          >
+            Clear
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
