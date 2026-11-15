@@ -17,13 +17,33 @@ import {
 } from "recharts";
 import { AnalyticsData } from "@/services/datasetsApi";
 
-const STATUS_COLORS: Record<string, string> = {
-  "HTTP 200 OK": "#00D69A",
-  "HTTP 400 Bad Request": "#FBBF24",
-  "HTTP 401 Unauthorized": "#F59E0B",
-  "HTTP 429 Rate Limit": "#FB923C",
-  "HTTP 500 Internal Error": "#EF4444",
-  "HTTP 503 Unavailable": "#DC2626",
+const STATUS_COLOR_PALETTE: Record<string, string> = {
+  "200": "#00D69A", // Emerald Green (OK)
+  "400": "#FBBF24", // Amber Yellow (Bad Request)
+  "401": "#F59E0B", // Amber Orange (Unauthorized)
+  "403": "#FB923C", // Orange (Forbidden)
+  "429": "#A855F7", // Purple (Rate Limit)
+  "500": "#EF4444", // Rose Red (Internal Server Error)
+  "503": "#DC2626", // Crimson Red (Service Unavailable)
+};
+
+const getStatusColor = (status: number | string | undefined, name?: string): string => {
+  const code = String(status || "");
+  if (STATUS_COLOR_PALETTE[code]) return STATUS_COLOR_PALETTE[code];
+
+  if (name) {
+    const match = name.match(/\d{3}/);
+    if (match && STATUS_COLOR_PALETTE[match[0]]) {
+      return STATUS_COLOR_PALETTE[match[0]];
+    }
+  }
+
+  // Fallback semantic spectrum
+  if (code.startsWith("2")) return "#00D69A";
+  if (code.startsWith("3")) return "#38BDF8";
+  if (code.startsWith("4")) return "#F59E0B";
+  if (code.startsWith("5")) return "#EF4444";
+  return "#64748B";
 };
 
 interface AnalyticsChartsProps {
@@ -112,7 +132,7 @@ export default function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
                   {analytics.statusBreakdown.map((entry) => (
                     <Cell
                       key={`cell-${entry.status}`}
-                      fill={STATUS_COLORS[entry.name] || "#64748B"}
+                      fill={getStatusColor(entry.status, entry.name)}
                     />
                   ))}
                 </Pie>
@@ -205,3 +225,4 @@ export default function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
     </div>
   );
 }
+
