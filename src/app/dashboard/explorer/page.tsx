@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ExplorerHeader,
   SavedViewTabs,
@@ -8,6 +8,7 @@ import {
   TableCommandBar,
   DataGrid,
   RecordDrawer,
+  TablePagination,
 } from "@/features/explorer/components";
 import { AVAILABLE_DATASETS } from "@/features/explorer/constants/datasets";
 import { MOCK_STREAM_RECORDS } from "@/features/explorer/constants/mock-records";
@@ -20,6 +21,18 @@ import {
   SortField,
   SortDirection,
 } from "@/features/explorer/types";
+import { useGetRecordsQuery } from "@/services/datasetsApi";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  setSearchQuery as setReduxSearch,
+  setDebouncedQuery,
+  setPageSize as setReduxPageSize,
+  setSort as setReduxSort,
+} from "@/store/slices/searchSlice";
+import {
+  setDensity as setReduxDensity,
+  toggleColumnVisibility,
+} from "@/store/slices/uiPreferenceSlice";
 
 const INITIAL_COLUMNS: ColumnConfig[] = [
   { key: "timestamp", label: "Time", visible: true },
@@ -31,17 +44,67 @@ const INITIAL_COLUMNS: ColumnConfig[] = [
 ];
 
 export default function DashboardExplorerPage() {
+  const dispatch = useAppDispatch();
+  const searchState = useAppSelector((state) => state.search);
+  const uiState = useAppSelector((state) => state.uiPreference);
+
   const [currentDataset, setCurrentDataset] = useState<DatasetMetadata>(AVAILABLE_DATASETS[0]);
   const [activeViewId, setActiveViewId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeChips, setActiveChips] = useState<string[]>([]);
-  const [density, setDensity] = useState<ViewDensity>("compact");
+  const [density, setDensity] = useState<ViewDensity>(uiState.density);
   const [columns, setColumns] = useState<ColumnConfig[]>(INITIAL_COLUMNS);
-  const [sortField, setSortField] = useState<SortField>("timestamp");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [sortField, setSortField] = useState<SortField>(searchState.sortField as SortField);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(searchState.sortDirection);
   const [selectedRecord, setSelectedRecord] = useState<StreamRecord | null>(null);
 
-  // Live Stream Simulator
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // 300ms Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      dispatch(setDebouncedQuery(searchQuery));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, dispatch]);
+
+  // Derive status filter from active chips
+  const statusParam = useMemo(() => {
+    if (activeChips.includes("status:500")) return "500,503";
+    return undefined;
+  }, [activeChips]);
+
+  const serviceParam = useMemo(() => {
+    if (activeChips.includes("service:auth")) return "auth-gateway";
+    return undefined;
+  }, [activeChips]);
+
+  const minLatencyParam = useMemo(() => {
+    if (activeChips.includes("latency:>20ms")) return 20;
+    return undefined;
+  }, [activeChips]);
+
+  // Live Server Query (Supabase / Fastify)
+  const { data: serverData } = useGetRecordsQuery(
+    {
+      datasetId: currentDataset.id,
+      page,
+      pageSize,
+      search: searchState.debouncedQuery || undefined,
+      status: statusParam,
+      service: serviceParam,
+      minLatency: minLatencyParam,
+      sortField,
+      sortDirection,
+    },
+    {
+      pollingInterval: 0, // On demand with pagination
+    }
+  );
+
+  // Live Stream Simulator (Fallback / Realtime addition)
   const {
     records: streamedRecords,
     isStreaming,
@@ -52,10 +115,26 @@ export default function DashboardExplorerPage() {
     ingestedCount,
   } = useStreamSimulator(currentDataset, MOCK_STREAM_RECORDS);
 
+  // Choose server records if available; fallback to streamed mock
+  const displayRecords = useMemo(() => {
+    if (serverData && serverData.data && serverData.data.length > 0) {
+      return serverData.data.map((r) => ({
+        ...r,
+        timestamp: typeof r.timestamp === "string" ? r.timestamp : new Date(r.timestamp).toISOString(),
+      }));
+    }
+    return streamedRecords;
+  }, [serverData, streamedRecords]);
+
+  const totalRecordCount = serverData?.pagination?.totalRecords ?? currentDataset.recordCount;
+  const totalPages = serverData?.pagination?.totalPages ?? Math.ceil(totalRecordCount / pageSize);
+  const scanTimeMs = serverData?.metrics?.scanTimeMs ?? 0.34;
+
   // Handle Saved View Preset Switch
   const handleSelectView = (viewId: string) => {
     setActiveViewId(viewId);
     setSearchQuery("");
+    setPage(1);
     if (viewId === "outages") {
       setActiveChips(["status:500"]);
     } else if (viewId === "slow-queries") {
@@ -71,11 +150,13 @@ export default function DashboardExplorerPage() {
   const handleAddChip = (chip: string) => {
     if (!activeChips.includes(chip)) {
       setActiveChips((prev) => [...prev, chip]);
+      setPage(1);
     }
   };
 
   const handleRemoveChip = (chip: string) => {
     setActiveChips((prev) => prev.filter((c) => c !== chip));
+    setPage(1);
   };
 
   // Toggle Column Visibility
@@ -83,55 +164,30 @@ export default function DashboardExplorerPage() {
     setColumns((prev) =>
       prev.map((col) => (col.key === key ? { ...col, visible: !col.visible } : col))
     );
+    dispatch(toggleColumnVisibility(key));
   };
 
   // Column Sort
   const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDirection("desc");
-    }
+    const newDir = sortField === field && sortDirection === "desc" ? "asc" : "desc";
+    setSortField(field);
+    setSortDirection(newDir);
+    setPage(1);
+    dispatch(setReduxSort({ field, direction: newDir }));
   };
 
-  // Filter & Sort Pipeline
-  const filteredRecords = useMemo(() => {
-    return streamedRecords.filter((rec) => {
-      // 1. Chips filter
-      for (const chip of activeChips) {
-        if (chip === "status:500" && rec.status < 500) return false;
-        if (chip === "latency:>20ms" && rec.latency <= 20) return false;
-        if (chip === "service:auth" && rec.service !== "auth-gateway") return false;
-      }
-
-      // 2. Search query filter
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        rec.id.toLowerCase().includes(q) ||
-        rec.service.toLowerCase().includes(q) ||
-        rec.cluster.toLowerCase().includes(q) ||
-        rec.summary.toLowerCase().includes(q) ||
-        rec.status.toString().includes(q) ||
-        rec.method.toLowerCase().includes(q)
-      );
-    }).sort((a, b) => {
-      let comparison = 0;
-      if (sortField === "timestamp") comparison = a.timestamp.localeCompare(b.timestamp);
-      else if (sortField === "id") comparison = a.id.localeCompare(b.id);
-      else if (sortField === "service") comparison = a.service.localeCompare(b.service);
-      else if (sortField === "cluster") comparison = a.cluster.localeCompare(b.cluster);
-      else if (sortField === "latency") comparison = a.latency - b.latency;
-      else if (sortField === "status") comparison = a.status - b.status;
-      return sortDirection === "desc" ? -comparison : comparison;
-    });
-  }, [streamedRecords, searchQuery, activeChips, sortField, sortDirection]);
+  // Density change
+  const handleChangeDensity = (newDensity: ViewDensity) => {
+    setDensity(newDensity);
+    dispatch(setReduxDensity(newDensity));
+  };
 
   // Export handlers
   const handleExport = (format: "csv" | "json") => {
     if (format === "json") {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredRecords, null, 2));
+      const dataStr =
+        "data:text/json;charset=utf-8," +
+        encodeURIComponent(JSON.stringify(displayRecords, null, 2));
       const downloadAnchor = document.createElement("a");
       downloadAnchor.setAttribute("href", dataStr);
       downloadAnchor.setAttribute("download", `datascope_${currentDataset.slug}_export.json`);
@@ -139,8 +195,17 @@ export default function DashboardExplorerPage() {
       downloadAnchor.click();
       downloadAnchor.remove();
     } else {
-      const headers = ["Timestamp", "Stream ID", "Service", "Method", "Cluster", "Latency (ms)", "Status", "Summary"];
-      const rows = filteredRecords.map((r) => [
+      const headers = [
+        "Timestamp",
+        "Stream ID",
+        "Service",
+        "Method",
+        "Cluster",
+        "Latency (ms)",
+        "Status",
+        "Summary",
+      ];
+      const rows = displayRecords.map((r) => [
         r.timestamp,
         r.id,
         r.service,
@@ -148,9 +213,11 @@ export default function DashboardExplorerPage() {
         r.cluster,
         r.latency,
         r.status,
-        `"${r.summary.replace(/"/g, '""')}"`,
+        `"${(r.summary || "").replace(/"/g, '""')}"`,
       ]);
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+      const csvContent =
+        "data:text/csv;charset=utf-8," +
+        [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
@@ -166,7 +233,10 @@ export default function DashboardExplorerPage() {
       {/* 1. Header Toolbar */}
       <ExplorerHeader
         currentDataset={currentDataset}
-        onSelectDataset={setCurrentDataset}
+        onSelectDataset={(ds) => {
+          setCurrentDataset(ds);
+          setPage(1);
+        }}
       />
 
       {/* 2. Saved View Tabs */}
@@ -178,22 +248,25 @@ export default function DashboardExplorerPage() {
       {/* 3. Universal Query & Filter Bar */}
       <ExplorerFilterBar
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          dispatch(setReduxSearch(q));
+        }}
         activeChips={activeChips}
         onRemoveChip={handleRemoveChip}
         onAddChip={handleAddChip}
-        matchCount={filteredRecords.length}
-        totalCount={streamedRecords.length}
+        matchCount={displayRecords.length}
+        totalCount={totalRecordCount}
       />
 
       {/* 4. Table Command Bar */}
       <TableCommandBar
         density={density}
-        onChangeDensity={setDensity}
+        onChangeDensity={handleChangeDensity}
         columns={columns}
         onToggleColumn={handleToggleColumn}
         onExport={handleExport}
-        recordCount={filteredRecords.length}
+        recordCount={totalRecordCount}
         isStreaming={isStreaming}
         onToggleStreaming={toggleStreaming}
         streamRate={streamRate}
@@ -203,7 +276,7 @@ export default function DashboardExplorerPage() {
 
       {/* 5. Virtualized Data Grid */}
       <DataGrid
-        records={filteredRecords}
+        records={displayRecords}
         density={density}
         columns={columns}
         sortField={sortField}
@@ -216,10 +289,26 @@ export default function DashboardExplorerPage() {
           setSearchQuery("");
           setActiveChips([]);
           setActiveViewId("all");
+          setPage(1);
         }}
       />
 
-      {/* 6. Slide-Out Record Details Drawer */}
+      {/* 6. Server-Side Table Pagination */}
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        totalRecords={totalRecordCount}
+        totalPages={totalPages}
+        scanTimeMs={scanTimeMs}
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(ps) => {
+          setPageSize(ps);
+          setPage(1);
+          dispatch(setReduxPageSize(ps));
+        }}
+      />
+
+      {/* 7. Slide-Out Record Details Drawer */}
       <RecordDrawer
         record={selectedRecord}
         onClose={() => setSelectedRecord(null)}
@@ -227,4 +316,3 @@ export default function DashboardExplorerPage() {
     </div>
   );
 }
-

@@ -4,4 +4,5 @@ export * from "./ExplorerFilterBar";
 export * from "./TableCommandBar";
 export * from "./RecordDrawer";
 export * from "./DataGrid";
+export * from "./TablePagination";
 

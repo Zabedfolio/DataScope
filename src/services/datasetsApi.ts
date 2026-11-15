@@ -1,12 +1,36 @@
 import { baseApi } from "./baseApi";
 import { DatasetMetadata, StreamRecord } from "../features/explorer/types";
 
-interface GetRecordsParams {
-  datasetId: string;
-  limit?: number;
-  offset?: number;
+export interface PaginatedRecordsResponse {
+  data: StreamRecord[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalRecords: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  metrics: {
+    scanTimeMs: number;
+    indexedScan: boolean;
+    returnedRows: number;
+  };
+}
+
+export interface GetPaginatedRecordsParams {
+  datasetId?: string;
+  page?: number;
+  pageSize?: number;
   search?: string;
+  status?: number | string;
   service?: string;
+  cluster?: string;
+  country?: string;
+  minLatency?: number;
+  maxLatency?: number;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
 }
 
 interface ApiResponse<T> {
@@ -29,17 +53,24 @@ export const datasetsApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Datasets", id }],
     }),
 
-    getDatasetRecords: builder.query<StreamRecord[], GetRecordsParams>({
-      query: ({ datasetId, limit = 50, offset = 0, search, service }) => {
-        const params = new URLSearchParams({
-          limit: String(limit),
-          offset: String(offset),
-        });
-        if (search) params.append("search", search);
-        if (service) params.append("service", service);
-        return `/api/v1/datasets/${datasetId}/records?${params.toString()}`;
+    getRecords: builder.query<PaginatedRecordsResponse, GetPaginatedRecordsParams>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params.datasetId) queryParams.set("datasetId", params.datasetId);
+        if (params.page) queryParams.set("page", String(params.page));
+        if (params.pageSize) queryParams.set("pageSize", String(params.pageSize));
+        if (params.search) queryParams.set("search", params.search);
+        if (params.status !== undefined && params.status !== null) queryParams.set("status", String(params.status));
+        if (params.service) queryParams.set("service", params.service);
+        if (params.cluster) queryParams.set("cluster", params.cluster);
+        if (params.country) queryParams.set("country", params.country);
+        if (params.minLatency !== undefined && params.minLatency !== null) queryParams.set("minLatency", String(params.minLatency));
+        if (params.maxLatency !== undefined && params.maxLatency !== null) queryParams.set("maxLatency", String(params.maxLatency));
+        if (params.sortField) queryParams.set("sortField", params.sortField);
+        if (params.sortDirection) queryParams.set("sortDirection", params.sortDirection);
+
+        return `/api/v1/records?${queryParams.toString()}`;
       },
-      transformResponse: (response: ApiResponse<StreamRecord[]>) => response.data,
       providesTags: ["Records"],
     }),
 
@@ -57,7 +88,6 @@ export const datasetsApi = baseApi.injectEndpoints({
 export const {
   useGetDatasetsQuery,
   useGetDatasetByIdQuery,
-  useGetDatasetRecordsQuery,
+  useGetRecordsQuery,
   useIngestRecordMutation,
 } = datasetsApi;
-
