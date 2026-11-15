@@ -184,7 +184,16 @@ export default function DashboardExplorerPage() {
 
   // Export handlers
   const handleExport = (format: "csv" | "json") => {
-    if (format === "json") {
+    if (format === "csv") {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const params = new URLSearchParams({ datasetId: currentDataset.id });
+      if (searchState.debouncedQuery) params.append("search", searchState.debouncedQuery);
+      if (statusParam) params.append("status", statusParam);
+      if (serviceParam) params.append("service", serviceParam);
+
+      const downloadUrl = `${apiUrl}/api/v1/records/export?${params.toString()}`;
+      window.open(downloadUrl, "_blank");
+    } else {
       const dataStr =
         "data:text/json;charset=utf-8," +
         encodeURIComponent(JSON.stringify(displayRecords, null, 2));
@@ -194,37 +203,6 @@ export default function DashboardExplorerPage() {
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
-    } else {
-      const headers = [
-        "Timestamp",
-        "Stream ID",
-        "Service",
-        "Method",
-        "Cluster",
-        "Latency (ms)",
-        "Status",
-        "Summary",
-      ];
-      const rows = displayRecords.map((r) => [
-        r.timestamp,
-        r.id,
-        r.service,
-        r.method,
-        r.cluster,
-        r.latency,
-        r.status,
-        `"${(r.summary || "").replace(/"/g, '""')}"`,
-      ]);
-      const csvContent =
-        "data:text/csv;charset=utf-8," +
-        [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `datascope_${currentDataset.slug}_export.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
     }
   };
 

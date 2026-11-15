@@ -1,6 +1,15 @@
 import { baseApi } from "./baseApi";
 import { DatasetMetadata, StreamRecord } from "../features/explorer/types";
 
+export interface AnalyticsData {
+  totalRecords: number;
+  statusBreakdown: { status: number; name: string; count: number }[];
+  serviceBreakdown: { service: string; count: number; avgLatency: number }[];
+  categoryBreakdown: { category: string; totalRecords: number; datasetCount: number }[];
+  throughputTrend: { day: string; count: number }[];
+  frequentlyUsedFilters: { rule: string; count: number; category: string }[];
+}
+
 export interface PaginatedRecordsResponse {
   data: StreamRecord[];
   pagination: {
@@ -74,6 +83,12 @@ export const datasetsApi = baseApi.injectEndpoints({
       providesTags: ["Records"],
     }),
 
+    getAnalytics: builder.query<AnalyticsData, void>({
+      query: () => "/api/v1/analytics/overview",
+      transformResponse: (response: ApiResponse<AnalyticsData>) => response.data,
+      providesTags: ["Records"],
+    }),
+
     ingestRecord: builder.mutation<StreamRecord, Partial<StreamRecord> & { datasetId: string }>({
       query: (record) => ({
         url: "/api/v1/records/ingest",
@@ -89,5 +104,6 @@ export const {
   useGetDatasetsQuery,
   useGetDatasetByIdQuery,
   useGetRecordsQuery,
+  useGetAnalyticsQuery,
   useIngestRecordMutation,
 } = datasetsApi;

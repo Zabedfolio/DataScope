@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
+import { SearchHistoryDropdown } from "@/features/search/components";
 
 interface ExplorerFilterBarProps {
   searchQuery: string;
@@ -54,12 +55,13 @@ export function ExplorerFilterBar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Query streams by ID, service, cluster, payload key, or predicate (e.g. status:500)..."
-            className="w-full pl-10 pr-16 py-2 text-xs sm:text-sm font-mono rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-[#051013] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00D69A] transition-all"
+            className="w-full pl-10 pr-28 py-2 text-xs sm:text-sm font-mono rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-[#051013] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00D69A] transition-all"
           />
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/10 rounded">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/10 rounded pointer-events-none">
               /
             </kbd>
+            <SearchHistoryDropdown onSelectQuery={onSearchChange} />
           </div>
         </div>
 

@@ -16,6 +16,7 @@ export function WorkstationTopBar() {
     if (pathname.includes("/datasets")) return "Datasets Library";
     if (pathname.includes("/search")) return "Visual AST Query Builder";
     if (pathname.includes("/views")) return "Saved Views Catalog";
+    if (pathname.includes("/analytics")) return "Cluster Analytics & Metrics";
     return "Cluster Overview";
   };
 
