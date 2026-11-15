@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { SavedViewEntity } from "../types";
 
@@ -22,6 +22,7 @@ export function ViewCard({
   const [copied, setCopied] = useState(false);
 
   const handleCopyLink = () => {
+    if (typeof window === "undefined") return;
     const url = `${window.location.origin}/dashboard/views#${view.slug}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
@@ -36,6 +37,23 @@ export function ViewCard({
       : view.datasetId === "ds_iot_sensor_mesh"
       ? "iot-sensors"
       : "k8s-telemetry";
+
+  const safeFilterRules = useMemo(() => {
+    if (Array.isArray(view.filterRules)) return view.filterRules;
+    if (typeof view.filterRules === "string") return [view.filterRules];
+    return [];
+  }, [view.filterRules]);
+
+  const formattedUpdatedAt = useMemo(() => {
+    if (!view.updatedAt) return "Just now";
+    try {
+      const date = new Date(view.updatedAt);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      }
+    } catch {}
+    return String(view.updatedAt);
+  }, [view.updatedAt]);
 
   return (
     <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#07171C]/90 p-5 sm:p-6 shadow-md backdrop-blur-xl transition-all duration-300 hover:border-[#00D69A]/40 hover:-translate-y-1">
@@ -96,14 +114,18 @@ export function ViewCard({
             Active Query Predicates
           </div>
           <div className="flex flex-wrap gap-1.5 font-mono">
-            {view.filterRules.map((rule) => (
-              <span
-                key={rule}
-                className="px-2 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10"
-              >
-                {rule}
-              </span>
-            ))}
+            {safeFilterRules.length === 0 ? (
+              <span className="text-[10px] text-slate-400 italic">No specific filters</span>
+            ) : (
+              safeFilterRules.map((rule, idx) => (
+                <span
+                  key={`${rule}_${idx}`}
+                  className="px-2 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10"
+                >
+                  {rule}
+                </span>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -114,12 +136,12 @@ export function ViewCard({
         <div className="flex items-center justify-between text-slate-500 text-[11px] whitespace-nowrap">
           <div className="flex items-center gap-2">
             <span className="text-emerald-600 dark:text-[#00D69A] font-bold">
-              {view.lastRunLatencyMs}ms
+              {view.lastRunLatencyMs ?? 0.35}ms
             </span>
             <span>•</span>
-            <span className="whitespace-nowrap">{view.recordsMatched} matches</span>
+            <span className="whitespace-nowrap">{(view.recordsMatched ?? 0).toLocaleString()} matches</span>
           </div>
-          <span className="text-slate-400 text-[10px] whitespace-nowrap">{view.updatedAt}</span>
+          <span className="text-slate-400 text-[10px] whitespace-nowrap">{formattedUpdatedAt}</span>
         </div>
 
         {/* Row 2: Action Buttons */}

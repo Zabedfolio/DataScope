@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { ViewHeader, ViewCard } from "@/features/views/components";
-import { INITIAL_SAVED_VIEWS } from "@/features/views/constants/saved-views";
 import { SavedViewEntity } from "@/features/views/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
@@ -17,31 +16,35 @@ export default function DashboardSavedViewsPage() {
   const currentRole = user?.role || "Data Analyst";
   const isViewer = currentRole.toLowerCase().includes("viewer");
 
-  const { data: apiViews } = useGetSavedViewsQuery();
+  // RTK Query is the single source of truth from PostgreSQL database
+  const { data: apiViews = [], isLoading } = useGetSavedViewsQuery();
   const [createViewMutation] = useCreateSavedViewMutation();
   const [toggleShareMutation] = useToggleShareSavedViewMutation();
   const [deleteViewMutation] = useDeleteSavedViewMutation();
 
-  const [views, setViews] = useState<SavedViewEntity[]>(INITIAL_SAVED_VIEWS);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "shared" | "private">("all");
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Sync API data if available
-  useEffect(() => {
-    if (apiViews && apiViews.length > 0) {
-      setViews(apiViews);
-    }
+  // Normalize views from database
+  const allViews: SavedViewEntity[] = useMemo(() => {
+    return apiViews.map((v) => ({
+      ...v,
+      filterRules: Array.isArray(v.filterRules) ? v.filterRules : [],
+      recordsMatched: v.recordsMatched ?? 0,
+      lastRunLatencyMs: v.lastRunLatencyMs ?? 0.35,
+    }));
   }, [apiViews]);
 
   // RBAC Gating (§2.C): Viewers can ONLY access shared views, never private views of analysts
   const authorizedViews = useMemo(() => {
     if (isViewer) {
-      return views.filter((v) => v.sharedWithTeam);
+      return allViews.filter((v) => v.sharedWithTeam);
     }
-    return views;
-  }, [views, isViewer]);
+    return allViews;
+  }, [allViews, isViewer]);
 
-  // Filter logic
+  // Filter logic (Search & Tabs)
   const filteredViews = useMemo(() => {
     return authorizedViews.filter((v) => {
       if (!isViewer) {
@@ -51,64 +54,64 @@ export default function DashboardSavedViewsPage() {
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
+      const rules = Array.isArray(v.filterRules) ? v.filterRules : [];
       return (
         v.title.toLowerCase().includes(q) ||
         v.datasetName.toLowerCase().includes(q) ||
         v.description.toLowerCase().includes(q) ||
-        v.filterRules.some((r) => r.toLowerCase().includes(q))
+        rules.some((r) => r.toLowerCase().includes(q))
       );
     });
   }, [authorizedViews, isViewer, filterTab, searchQuery]);
 
-  // Actions
+  // Dynamic Actions directly modifying PostgreSQL database
   const handleDelete = async (id: string) => {
-    if (isViewer) return; // Blocked for Viewer
-    setViews((prev) => prev.filter((v) => v.id !== id));
+    if (isViewer) return;
+    setActionError(null);
     try {
       await deleteViewMutation(id).unwrap();
-    } catch {
-      // Offline fallback: already updated local state
+    } catch (err) {
+      console.error("Failed to delete view:", err);
+      setActionError("Failed to delete view from database.");
     }
   };
 
   const handleToggleShare = async (id: string) => {
-    if (isViewer) return; // Blocked for Viewer
-    setViews((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, sharedWithTeam: !v.sharedWithTeam } : v))
-    );
+    if (isViewer) return;
+    setActionError(null);
     try {
       await toggleShareMutation(id).unwrap();
-    } catch {
-      // Offline fallback: already updated local state
+    } catch (err) {
+      console.error("Failed to toggle share:", err);
+      setActionError("Failed to update sharing state.");
     }
   };
 
   const handleCreateNew = async () => {
-    if (isViewer) return; // Blocked for Viewer
-    const newView: SavedViewEntity = {
-      id: `view_${Date.now()}`,
-      title: "New Custom Ingest Filter",
+    if (isViewer) return;
+    setActionError(null);
+    const newView = {
+      title: `Custom Ingest Filter #${allViews.length + 1}`,
       slug: `custom-filter-${Date.now()}`,
       datasetName: "K8s Microservice Telemetry",
       datasetId: "ds_k8s_telemetry",
-      description: "Custom workspace view created from live workstation filters.",
+      description: "Custom workspace view created dynamically from live workstation filters.",
       filterRules: ["latency < 1.0ms", "status == 200"],
       lastRunLatencyMs: 0.34,
       recordsMatched: 48200,
       sharedWithTeam: true,
-      updatedAt: "Just now",
     };
-
-    setViews((prev) => [newView, ...prev]);
 
     try {
       await createViewMutation(newView).unwrap();
-    } catch {
-      // Offline fallback: already added to local state
+    } catch (err) {
+      console.error("Failed to create view:", err);
+      setActionError("Failed to persist new view to database.");
     }
   };
 
-  const sharedCount = useMemo(() => views.filter((v) => v.sharedWithTeam).length, [views]);
+  const sharedCount = useMemo(() => allViews.filter((v) => v.sharedWithTeam).length, [allViews]);
+  const privateCount = useMemo(() => allViews.filter((v) => !v.sharedWithTeam).length, [allViews]);
 
   // Dataset clearance check for Viewer
   const isDatasetUnauthorized = (datasetId: string) => {
@@ -135,9 +138,25 @@ export default function DashboardSavedViewsPage() {
         </div>
       )}
 
+      {/* Error Banner */}
+      {actionError && (
+        <div className="w-full bg-rose-500/10 border-b border-rose-500/20 px-4 sm:px-6 lg:px-8 py-2">
+          <div className="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono text-rose-600 dark:text-rose-400">
+            <span>{actionError}</span>
+            <button
+              type="button"
+              onClick={() => setActionError(null)}
+              className="text-[10px] underline hover:opacity-80"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header Banner */}
       <ViewHeader
-        totalViews={authorizedViews.length}
+        totalViews={allViews.length}
         sharedCount={sharedCount}
         onCreateNew={handleCreateNew}
         isViewer={isViewer}
@@ -199,7 +218,7 @@ export default function DashboardSavedViewsPage() {
                       : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
                   }`}
                 >
-                  All Views ({views.length})
+                  All Views ({allViews.length})
                 </button>
                 <button
                   type="button"
@@ -221,7 +240,7 @@ export default function DashboardSavedViewsPage() {
                       : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/10"
                   }`}
                 >
-                  Private ({views.length - sharedCount})
+                  Private ({privateCount})
                 </button>
               </>
             )}
@@ -231,7 +250,33 @@ export default function DashboardSavedViewsPage() {
 
       {/* 3. Views Grid */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        {filteredViews.length === 0 ? (
+        {isLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 font-mono text-xs gap-3">
+            <div className="w-6 h-6 border-2 border-[#00D69A] border-t-transparent rounded-full animate-spin" />
+            <span>Connecting to Supabase PostgreSQL preset registry...</span>
+          </div>
+        ) : allViews.length === 0 ? (
+          <div className="py-20 text-center text-slate-500 dark:text-slate-400 font-mono text-sm max-w-md mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center mx-auto mb-3 text-slate-400">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+            </div>
+            <p className="font-bold text-slate-800 dark:text-slate-200">No Saved Views in Database</p>
+            <p className="mt-1 text-xs text-slate-500">
+              All views have been deleted. Database table is empty.
+            </p>
+            {!isViewer && (
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="mt-4 px-4 py-2 rounded-xl bg-[#00D69A] hover:bg-[#00BF89] text-slate-950 font-bold text-xs shadow-md transition-all"
+              >
+                + Create New Preset in Database
+              </button>
+            )}
+          </div>
+        ) : filteredViews.length === 0 ? (
           <div className="py-20 text-center text-slate-500 dark:text-slate-400 font-mono text-sm">
             <p>No saved views match &ldquo;{searchQuery}&rdquo;.</p>
             <button
