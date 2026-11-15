@@ -1,4 +1,5 @@
 import React from "react";
+import "@/app/globals.css";
 import { Sidebar } from "@/components/layout/Sidebar/Sidebar";
 import { WorkstationTopBar } from "@/components/layout/Sidebar/WorkstationTopBar";
 

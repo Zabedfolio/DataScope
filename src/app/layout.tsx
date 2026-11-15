@@ -24,10 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/icon.png?v=datascope" type="image/png" />
-        <link rel="icon" href="/favicon.ico?v=datascope" sizes="any" />
-        <link rel="apple-touch-icon" href="/icon.png?v=datascope" />
+      <body className="antialiased min-h-screen bg-background text-foreground flex flex-col">
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -46,8 +43,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className="antialiased min-h-screen bg-background text-foreground flex flex-col">
         <StoreProvider>
           <AuthProvider>
             <Navbar />
